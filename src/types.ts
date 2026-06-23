@@ -21,7 +21,12 @@ export type ServiceType =
   | 'custom_website_development'
   | 'custom_software_development'
   | 'digital_marketing'
-  | 'seo_optimization';
+  | 'seo_optimization'
+  | 'portfolio_website_development'
+  | 'product_showcase_website_development'
+  | 'feature_integration'
+  | 'others'
+  | 'custom';
 
 export interface Note {
   id: string;
@@ -53,6 +58,8 @@ export interface Lead {
   phone: string;
   service: ServiceType;
   budget: number;
+  location?: string;
+  customService?: string;
   stage: LeadStage;
   assignedTo: string; // references User.id or User.name
   priority: 'low' | 'medium' | 'high';
@@ -72,6 +79,11 @@ export const SERVICE_LABELS: Record<ServiceType, string> = {
   custom_software_development: 'Custom Software Development',
   digital_marketing: 'Digital Marketing',
   seo_optimization: 'SEO Optimization',
+  portfolio_website_development: 'Portfolio Website Development',
+  product_showcase_website_development: 'Product Showcase Website Development',
+  feature_integration: 'Feature Integration',
+  others: 'Others',
+  custom: 'Custom',
 };
 
 export const SERVICE_COLORS: Record<ServiceType, string> = {
@@ -82,6 +94,11 @@ export const SERVICE_COLORS: Record<ServiceType, string> = {
   custom_software_development: 'bg-cyan-50 text-cyan-700 border-cyan-200',
   digital_marketing: 'bg-pink-50 text-pink-700 border-pink-200',
   seo_optimization: 'bg-amber-50 text-amber-700 border-amber-200',
+  portfolio_website_development: 'bg-lime-50 text-lime-700 border-lime-200',
+  product_showcase_website_development: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
+  feature_integration: 'bg-orange-50 text-orange-700 border-orange-200',
+  others: 'bg-gray-50 text-gray-700 border-gray-200',
+  custom: 'bg-red-50 text-red-700 border-red-200',
 };
 
 export const STAGE_LABELS: Record<LeadStage, string> = {

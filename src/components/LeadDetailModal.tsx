@@ -64,6 +64,7 @@ export default function LeadDetailModal({
     companyName: '',
     email: '',
     phone: '',
+    location: '',
     budget: 0,
   });
 
@@ -75,6 +76,7 @@ export default function LeadDetailModal({
         companyName: lead.companyName,
         email: lead.email,
         phone: lead.phone,
+        location: lead.location || '',
         budget: lead.budget,
       });
     }
@@ -148,6 +150,7 @@ export default function LeadDetailModal({
       companyName: editForm.companyName,
       email: editForm.email,
       phone: editForm.phone,
+      location: editForm.location,
       budget: editForm.budget
     };
     updated = appendActivity(updated, 'stage_change', 'Updated client profile details');
@@ -244,7 +247,7 @@ export default function LeadDetailModal({
           <div className="p-4 bg-slate-950 text-white flex items-center justify-between shrink-0">
             <div className="min-w-0">
               <span className="text-xxs font-extrabold text-blue-400 tracking-wider uppercase font-mono block">
-                {SERVICE_LABELS[lead.service]}
+                {lead.service === 'custom' && lead.customService ? lead.customService : SERVICE_LABELS[lead.service]}
               </span>
               <h3 className="text-sm font-bold truncate mt-0.5 max-w-[400px]">
                 {lead.companyName}
@@ -427,14 +430,25 @@ export default function LeadDetailModal({
                           className="w-full bg-white border border-slate-200 text-slate-700 p-1.5 rounded-md outline-none"
                         />
                       </div>
-                      <div className="sm:col-span-2">
-                        <label className="text-slate-400 block font-semibold mb-0.5">Deal Value (₹):</label>
-                        <input
-                          type="number"
-                          value={editForm.budget}
-                          onChange={e => setEditForm({ ...editForm, budget: Number(e.target.value) })}
-                          className="w-full bg-white border border-slate-200 text-slate-700 p-1.5 rounded-md outline-none"
-                        />
+                      <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                          <label className="text-slate-400 block font-semibold mb-0.5">Location:</label>
+                          <input
+                            type="text"
+                            value={editForm.location}
+                            onChange={e => setEditForm({ ...editForm, location: e.target.value })}
+                            className="w-full bg-white border border-slate-200 text-slate-700 p-1.5 rounded-md outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-slate-400 block font-semibold mb-0.5">Deal Value (₹):</label>
+                          <input
+                            type="number"
+                            value={editForm.budget}
+                            onChange={e => setEditForm({ ...editForm, budget: Number(e.target.value) })}
+                            className="w-full bg-white border border-slate-200 text-slate-700 p-1.5 rounded-md outline-none"
+                          />
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -455,12 +469,18 @@ export default function LeadDetailModal({
                         <span className="text-slate-400 block font-semibold mb-0.5">Phone Line:</span>
                         <a href={`tel:${lead.phone}`} className="text-slate-700 block font-semibold hover:underline">{lead.phone}</a>
                       </div>
-                      <div className="sm:col-span-2">
-                        <span className="text-slate-400 block font-semibold mb-0.5">Deal Value:</span>
-                        <span className="text-slate-700 font-bold flex items-center">
-                          <IndianRupee className="w-3 h-3 mr-0.5 text-slate-400" />
-                          {lead.budget.toLocaleString('en-IN')}
-                        </span>
+                      <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                          <span className="text-slate-400 block font-semibold mb-0.5">Location:</span>
+                          <span className="text-slate-700 font-bold block">{lead.location || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block font-semibold mb-0.5">Deal Value:</span>
+                          <span className="text-slate-700 font-bold flex items-center">
+                            <IndianRupee className="w-3 h-3 mr-0.5 text-slate-400" />
+                            {lead.budget.toLocaleString('en-IN')}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -518,7 +538,7 @@ export default function LeadDetailModal({
                 <div className="p-3 bg-blue-50 border border-blue-150 rounded-xl mt-2">
                   <h4 className="text-xxs font-bold text-blue-800">IT Consulting Scope</h4>
                   <p className="text-xxs text-blue-700 mt-1 leading-relaxed">
-                    Our team provides specific consulting structures to match this <strong>{SERVICE_LABELS[lead.service]}</strong> requirement. 
+                    Our team provides specific consulting structures to match this <strong>{lead.service === 'custom' && lead.customService ? lead.customService : SERVICE_LABELS[lead.service]}</strong> requirement. 
                     Ensure to log consistent notes during scoping of budget constraints or service timelines.
                   </p>
                 </div>

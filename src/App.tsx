@@ -427,7 +427,7 @@ export default function App() {
                     <th className="p-4 font-semibold uppercase tracking-wider">Consulting Scope</th>
                     <th className="p-4 font-semibold uppercase tracking-wider">Acquisition Stage</th>
                     <th className="p-4 font-semibold uppercase tracking-wider text-right">Deal Budget</th>
-                    <th className="p-4 font-semibold uppercase tracking-wider">Assignee PIC</th>
+                    <th className="p-4 font-semibold uppercase tracking-wider">Location</th>
                     <th className="p-4 font-semibold uppercase tracking-wider text-center">Priority</th>
                     <th className="p-4 font-semibold uppercase tracking-wider text-center">Action</th>
                   </tr>
@@ -466,7 +466,7 @@ export default function App() {
 
                           <td className="p-4">
                             <span className={`inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-sm border ${SERVICE_COLORS[lead.service]}`}>
-                              {SERVICE_LABELS[lead.service]}
+                              {lead.service === 'custom' && lead.customService ? lead.customService : SERVICE_LABELS[lead.service]}
                             </span>
                           </td>
 
@@ -481,7 +481,7 @@ export default function App() {
                           </td>
 
                           <td className="p-4 font-medium text-slate-600">
-                            {lead.assignedTo}
+                            {lead.location || '-'}
                           </td>
 
                           <td className="p-4 text-center">
@@ -554,6 +554,7 @@ export default function App() {
         currentUser={currentUser}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleCreateLead}
+        leads={leads}
       />
 
     </div>

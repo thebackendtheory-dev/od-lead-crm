@@ -13,20 +13,25 @@ interface LeadFormModalProps {
   onClose: () => void;
   onSubmit: (leadData: Omit<Lead, 'id' | 'createdAt' | 'updatedAt' | 'notes' | 'tasks' | 'activities'>) => void;
   currentUser: User;
+  leads: Lead[];
 }
 
 export default function LeadFormModal({
   isOpen,
   onClose,
   onSubmit,
-  currentUser
+  currentUser,
+  leads
 }: LeadFormModalProps) {
   // Input states
+  const [existingClientId, setExistingClientId] = useState('');
   const [clientName, setClientName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [location, setLocation] = useState('');
   const [service, setService] = useState<ServiceType>('website_development');
+  const [customService, setCustomService] = useState('');
   const [budget, setBudget] = useState('');
   const [stage, setStage] = useState<LeadStage>('new');
   const [assignedTo, setAssignedTo] = useState(SEED_USERS[0].name);
@@ -55,6 +60,11 @@ export default function LeadFormModal({
       return;
     }
 
+    if (service === 'custom' && !customService.trim()) {
+      setErrorMsg('Please specify the custom service.');
+      return;
+    }
+
     // Email pattern check
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setErrorMsg('Please specify a valid company email address.');
@@ -74,7 +84,9 @@ export default function LeadFormModal({
       companyName: companyName.trim(),
       email: email.trim(),
       phone: phone.trim(),
+      location: location.trim(),
       service,
+      customService: service === 'custom' ? customService.trim() : undefined,
       budget: parsedBudget,
       stage,
       assignedTo,
@@ -83,11 +95,14 @@ export default function LeadFormModal({
     });
 
     // Reset fields
+    setExistingClientId('');
     setClientName('');
     setCompanyName('');
     setEmail('');
     setPhone('');
+    setLocation('');
     setService('website_development');
+    setCustomService('');
     setBudget('');
     setStage('new');
     setPriority('medium');
@@ -130,6 +145,41 @@ export default function LeadFormModal({
             <h4 className="text-xxs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1">
               Contact Profile
             </h4>
+            
+            <div className="mb-2">
+              <label className="text-xxs text-slate-600 block font-semibold mb-1">Select Existing Client (Optional):</label>
+              <select
+                value={existingClientId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setExistingClientId(id);
+                  if (id) {
+                    const existing = leads.find(l => l.id === id);
+                    if (existing) {
+                      setClientName(existing.clientName);
+                      setCompanyName(existing.companyName);
+                      setEmail(existing.email);
+                      setPhone(existing.phone);
+                      setLocation(existing.location || '');
+                    }
+                  } else {
+                    setClientName('');
+                    setCompanyName('');
+                    setEmail('');
+                    setPhone('');
+                    setLocation('');
+                  }
+                }}
+                className="w-full bg-slate-50 border border-slate-205 border-slate-200 outline-none text-xxs p-2 rounded-lg focus:bg-white focus:border-blue-500 transition-all text-slate-800 font-medium mb-3"
+              >
+                <option value="">-- Enter New Client --</option>
+                {Array.from(new Map(leads.map(lead => [lead.email, lead])).values()).map(lead => (
+                  <option key={lead.id} value={lead.id}>
+                    {lead.clientName} | {lead.phone}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
@@ -175,6 +225,17 @@ export default function LeadFormModal({
                   className="w-full bg-slate-50 border border-slate-205 border-slate-200 outline-none text-xxs p-2 rounded-lg focus:bg-white focus:border-blue-500 transition-all text-slate-800 font-medium"
                 />
               </div>
+
+              <div>
+                <label className="text-xxs text-slate-600 block font-semibold mb-1">Location:</label>
+                <input
+                  type="text"
+                  placeholder="e.g., New York, NY"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-205 border-slate-200 outline-none text-xxs p-2 rounded-lg focus:bg-white focus:border-blue-500 transition-all text-slate-800 font-medium"
+                />
+              </div>
             </div>
           </div>
 
@@ -197,6 +258,19 @@ export default function LeadFormModal({
                   ))}
                 </select>
               </div>
+
+              {service === 'custom' && (
+                <div>
+                  <label className="text-xxs text-slate-600 block font-semibold mb-1">Custom Service Details:</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Blockchain Integration"
+                    value={customService}
+                    onChange={(e) => setCustomService(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-205 border-slate-200 outline-none text-xxs p-2 rounded-lg focus:bg-white focus:border-blue-500 transition-all text-slate-800 font-medium"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="text-xxs text-slate-600 block font-semibold mb-1">Estimated Budget Amount (INR):</label>

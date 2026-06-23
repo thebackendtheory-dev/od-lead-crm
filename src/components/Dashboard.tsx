@@ -384,7 +384,7 @@ export default function Dashboard({ leads, currentUser, onSelectLead }: Dashboar
                 >
                   <div className="min-w-0">
                     <h4 className="text-xs font-semibold text-slate-800 truncate">{lead.companyName}</h4>
-                    <p className="text-xxs text-slate-500 truncate mt-0.5">{lead.clientName} &bull; {SERVICE_LABELS[lead.service]}</p>
+                    <p className="text-xxs text-slate-500 truncate mt-0.5">{lead.clientName} &bull; {lead.service === 'custom' && lead.customService ? lead.customService : SERVICE_LABELS[lead.service]}</p>
                     <span className="inline-block px-1.5 py-0.5 font-bold text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-sm mt-1.5 uppercase">
                       {STAGE_LABELS[lead.stage]}
                     </span>

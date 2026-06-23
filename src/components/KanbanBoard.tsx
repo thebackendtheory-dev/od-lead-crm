@@ -204,7 +204,7 @@ export default function KanbanBoard({
                           {/* Service Type badge */}
                           <div className="mt-2.5">
                             <span className={`inline-block text-[9px] font-extrabold p-0.5 px-2 rounded-sm border truncate max-w-full ${SERVICE_COLORS[lead.service]}`}>
-                              {SERVICE_LABELS[lead.service]}
+                              {lead.service === 'custom' && lead.customService ? lead.customService : SERVICE_LABELS[lead.service]}
                             </span>
                           </div>
 
