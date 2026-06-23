@@ -1,0 +1,8 @@
+{
+  "name": "Lead Management System",
+  "description": "An internal lead management system for IT agencies with a CRM dashboard, Kanban pipeline view, role-based access control, task alerts, and digital marketing pipeline tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
