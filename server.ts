@@ -2,10 +2,14 @@ import express from 'express';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+import bcrypt from 'bcryptjs';
+
 dotenv.config();
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 const PORT = 3000;
 
 let supabaseClient: ReturnType<typeof createClient> | null = null;
@@ -22,6 +26,56 @@ export function getSupabase() {
   }
   return supabaseClient;
 }
+
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body;
+  const supabase = getSupabase();
+  if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+  try {
+    const { data: user, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('username', username)
+      .single();
+
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const isValid = await bcrypt.compare(password, user.password_hash);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Set cookie for 90 days
+    const token = Buffer.from(username).toString('base64'); // Simple token for demo, in prod use JWT
+    res.cookie('admin_session', token, {
+      maxAge: 90 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie('admin_session');
+  res.json({ success: true });
+});
+
+app.get('/api/auth/check', (req, res) => {
+  const session = req.cookies.admin_session;
+  if (session) {
+    res.json({ authenticated: true });
+  } else {
+    res.json({ authenticated: false });
+  }
+});
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', supabaseConfigured: !!getSupabase() });

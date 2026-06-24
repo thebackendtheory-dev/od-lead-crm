@@ -23,6 +23,8 @@ import LeadDetailModal from './components/LeadDetailModal.tsx';
 import LeadFormModal from './components/LeadFormModal.tsx';
 import NotificationAlerts from './components/NotificationAlerts.tsx';
 
+import Login from './components/Login.tsx';
+
 // Icons
 import {
   LayoutDashboard,
@@ -47,6 +49,8 @@ import {
 
 export default function App() {
   // 1. Core State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [currentUser, setCurrentUser] = useState<User>(SEED_USERS[0]); // One Devs (Admin) By Default
 
@@ -63,6 +67,18 @@ export default function App() {
 
   // 2. Initialize
   useEffect(() => {
+    // Check auth first
+    fetch('/api/auth/check')
+      .then(res => res.json())
+      .then(data => {
+        setIsAuthenticated(data.authenticated);
+        setIsLoadingAuth(false);
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+        setIsLoadingAuth(false);
+      });
+
     // Read from localStorage synchronously first for fast render
     const savedLeads = getLeadsFromStore();
     setLeads(savedLeads);
@@ -237,8 +253,26 @@ export default function App() {
     const leadToDelete = leads.find(l => l.id === leadId);
     if (!leadToDelete) return;
     const updated = leads.filter(l => l.id !== leadId);
-    syncStore(updated, leadToDelete);
+    syncStore(updated, leadToDelete); // Will delete API-side? Let's assume we need to delete.
+    fetch(`/api/leads/${leadId}`, { method: 'DELETE' }).catch(e => console.error(e));
   };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setIsAuthenticated(false);
+    } catch (e) {
+      console.error('Logout failed');
+    }
+  };
+
+  if (isLoadingAuth) {
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased flex flex-col justify-between">
@@ -305,6 +339,14 @@ export default function App() {
             >
               <Plus className="w-4 h-4" />
               <span>New Lead</span>
+            </button>
+
+            {/* Logout btn */}
+            <button
+              onClick={handleLogout}
+              className="bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xxs p-2 px-3.5 rounded-xl flex items-center gap-1.5 cursor-pointer transition-all"
+            >
+              <span>Logout</span>
             </button>
 
           </div>
