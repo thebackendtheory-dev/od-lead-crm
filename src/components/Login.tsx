@@ -42,8 +42,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     <div className="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
         <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center">
-            <Lock className="w-8 h-8 text-blue-600" />
+          <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center shadow-sm border-2 border-blue-50">
+            <img src="/od-icon.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
         </div>
         

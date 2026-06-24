@@ -283,8 +283,8 @@ export default function App() {
           
           {/* Logo Brand Brandings */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-[0.75rem] overflow-hidden shrink-0 shadow-md">
+              <img src="/od-icon.png" alt="One Devs Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <div className="flex items-center gap-2">
