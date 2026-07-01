@@ -346,13 +346,17 @@ export function getMaintenanceFromStore(): MaintenanceRecord[] {
 export async function fetchMaintenanceAsync(): Promise<MaintenanceRecord[]> {
   try {
     const res = await fetch('/api/maintenance');
-    if (!res.ok) throw new Error('Failed to fetch maintenance records');
-    const data = await res.json();
-    return data;
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data) && data.length > 0) {
+        saveMaintenanceToStore(data);
+        return data;
+      }
+    }
   } catch (error) {
     console.error('API Error:', error);
-    return []; // Return empty if offline or failing
   }
+  return getMaintenanceFromStore();
 }
 
 export async function createMaintenanceAsync(record: MaintenanceRecord): Promise<void> {
