@@ -329,6 +329,28 @@ export function saveLeadsToStore(leads: Lead[]): void {
   }
 }
 
+import { MaintenanceRecord } from '../types';
+
+export function getMaintenanceFromStore(): MaintenanceRecord[] {
+  try {
+    const data = localStorage.getItem('agency_maintenance_data_v1');
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Failed to parse maintenance from localstorage', error);
+  }
+  return [];
+}
+
+export function saveMaintenanceToStore(records: MaintenanceRecord[]): void {
+  try {
+    localStorage.setItem('agency_maintenance_data_v1', JSON.stringify(records));
+  } catch (error) {
+    console.error('Failed to save maintenance to localstorage', error);
+  }
+}
+
 // User context tools
 export function getLoggedInUser(): User {
   const defaultUser = SEED_USERS[0]; // One Devs (Admin)

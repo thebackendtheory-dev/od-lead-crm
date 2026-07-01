@@ -3,6 +3,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+export type MaintenanceServiceType = 'website_maintenance' | 'seo' | 'digital_marketing' | 'email_maintenance' | 'social_media_marketing';
+
+export const MAINTENANCE_SERVICE_LABELS: Record<MaintenanceServiceType, string> = {
+  website_maintenance: 'Website Maintenance',
+  seo: 'SEO',
+  digital_marketing: 'Digital Marketing',
+  email_maintenance: 'Email Maintenance',
+  social_media_marketing: 'Social Media Marketing',
+};
+
+export type PaymentFrequency = 'monthly' | 'quarterly' | 'yearly';
+
+export interface MaintenanceRecord {
+  id: string;
+  clientName: string;
+  companyName: string;
+  serviceType: MaintenanceServiceType;
+  startDate: string; // ISO string
+  endDate: string; // ISO string
+  amount: number;
+  paymentFrequency: PaymentFrequency;
+  paymentStatus: 'paid' | 'pending';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type UserRole = 'admin' | 'manager' | 'agent';
 
 export interface User {

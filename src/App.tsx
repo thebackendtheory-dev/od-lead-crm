@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Lead, LeadStage, ServiceType, User, SERVICE_LABELS, STAGE_LABELS, PRIORITY_COLORS, SERVICE_COLORS } from './types';
+import { Lead, LeadStage, ServiceType, User, SERVICE_LABELS, STAGE_LABELS, PRIORITY_COLORS, SERVICE_COLORS, MaintenanceRecord } from './types';
 import { 
   fetchLeadsAsync,
   getLeadsFromStore, 
@@ -13,7 +13,9 @@ import {
   saveLoggedInUser, 
   generateAlerts, 
   SEED_USERS,
-  filterLeadsByRole
+  filterLeadsByRole,
+  getMaintenanceFromStore,
+  saveMaintenanceToStore
 } from './utils/dataStore';
 
 // Components
@@ -22,7 +24,7 @@ import KanbanBoard from './components/KanbanBoard.tsx';
 import LeadDetailModal from './components/LeadDetailModal.tsx';
 import LeadFormModal from './components/LeadFormModal.tsx';
 import NotificationAlerts from './components/NotificationAlerts.tsx';
-
+import MaintenanceView from './components/MaintenanceView.tsx';
 import Login from './components/Login.tsx';
 
 // Icons
@@ -52,9 +54,11 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [maintenanceRecords, setMaintenanceRecords] = useState<MaintenanceRecord[]>([]);
   const [currentUser, setCurrentUser] = useState<User>(SEED_USERS[0]); // One Devs (Admin) By Default
 
   // UI state
+  const [activeView, setActiveView] = useState<'leads' | 'maintenance'>('leads');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'kanban' | 'list'>('dashboard');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -82,6 +86,7 @@ export default function App() {
     // Read from localStorage synchronously first for fast render
     const savedLeads = getLeadsFromStore();
     setLeads(savedLeads);
+    setMaintenanceRecords(getMaintenanceFromStore());
     
     // Then attempt to fetch from API in background
     fetchLeadsAsync().then((serverLeads) => {
@@ -112,6 +117,54 @@ export default function App() {
         try { await fetch(`/api/leads/${leadToUpdate.id}`, { method: 'DELETE' }); } catch (e) {}
       }
     }
+  };
+
+  const syncMaintenanceStore = (updatedRecords: MaintenanceRecord[]) => {
+    setMaintenanceRecords(updatedRecords);
+    saveMaintenanceToStore(updatedRecords);
+  };
+
+  const handleSaveMaintenanceRecord = (record: MaintenanceRecord) => {
+    const isNew = !maintenanceRecords.some(r => r.id === record.id);
+    const updated = isNew
+      ? [...maintenanceRecords, record]
+      : maintenanceRecords.map(r => r.id === record.id ? record : r);
+    syncMaintenanceStore(updated);
+  };
+
+  const handleMarkPaidMaintenance = (recordId: string) => {
+    const record = maintenanceRecords.find(r => r.id === recordId);
+    if (!record) return;
+
+    // 1. Mark current as paid
+    const updatedCurrent = { ...record, paymentStatus: 'paid' as const, updatedAt: new Date().toISOString() };
+    
+    // 2. Generate next duration
+    const currentEnd = new Date(record.endDate);
+    const nextStart = new Date(currentEnd);
+    nextStart.setDate(nextStart.getDate() + 1); // Start next day after current ends
+
+    const nextEnd = new Date(nextStart);
+    if (record.paymentFrequency === 'monthly') {
+      nextEnd.setMonth(nextEnd.getMonth() + 1);
+    } else if (record.paymentFrequency === 'quarterly') {
+      nextEnd.setMonth(nextEnd.getMonth() + 3);
+    } else if (record.paymentFrequency === 'yearly') {
+      nextEnd.setFullYear(nextEnd.getFullYear() + 1);
+    }
+
+    const nextRecord: MaintenanceRecord = {
+      ...record,
+      id: `maint-${Date.now()}`,
+      startDate: nextStart.toISOString(),
+      endDate: nextEnd.toISOString(),
+      paymentStatus: 'pending' as const,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updated = maintenanceRecords.map(r => r.id === recordId ? updatedCurrent : r).concat(nextRecord);
+    syncMaintenanceStore(updated);
   };
 
   // 3. Filtered Leads List based on access control (RBAC):
@@ -297,6 +350,25 @@ export default function App() {
             </div>
           </div>
 
+          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1">
+            <button
+              onClick={() => setActiveView('leads')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                activeView === 'leads' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Leads
+            </button>
+            <button
+              onClick={() => setActiveView('maintenance')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                activeView === 'maintenance' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Maintenance
+            </button>
+          </div>
+
           {/* Action Tools (Role picker, alerts notification, add opportunity) */}
           <div className="flex items-center gap-3.5 flex-wrap">
             
@@ -354,12 +426,14 @@ export default function App() {
         </div>
       </header>
 
-      {/* SUB CONTROLLER MODULE: TABS, SEARCH, FILTERS */}
-      <section className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-6 shrink-0 z-10 shadow-xxs">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
-          
-          {/* Section 1: Dashboard navigation tab list */}
-          <div className="flex gap-1.5 bg-slate-50 p-1 rounded-xl self-start">
+      {activeView === 'leads' && (
+        <>
+          {/* SUB CONTROLLER MODULE: TABS, SEARCH, FILTERS */}
+          <section className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-6 shrink-0 z-10 shadow-xxs">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+              
+              {/* Section 1: Dashboard navigation tab list */}
+              <div className="flex gap-1.5 bg-slate-50 p-1 rounded-xl self-start">
             {[
               { id: 'dashboard', label: 'CRM Dashboard', icon: LayoutDashboard },
               { id: 'kanban', label: 'Pipeline Stage Board', icon: KanbanSquare },
@@ -551,6 +625,16 @@ export default function App() {
         )}
 
       </main>
+      </>
+      )}
+
+      {activeView === 'maintenance' && (
+        <MaintenanceView 
+          records={maintenanceRecords} 
+          onSaveRecord={handleSaveMaintenanceRecord}
+          onMarkPaid={handleMarkPaidMaintenance}
+        />
+      )}
 
       {/* FOOTER */}
       <footer className="bg-slate-950 border-t border-slate-900 text-slate-400 text-xxs p-4 shrink-0 mt-8">
