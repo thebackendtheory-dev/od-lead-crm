@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MaintenanceRecord, MAINTENANCE_SERVICE_LABELS } from '../types';
-import { Plus, CheckCircle, Clock } from 'lucide-react';
+import { Plus, CheckCircle, Clock, Search, Filter } from 'lucide-react';
 import MaintenanceFormModal from './MaintenanceFormModal.tsx';
 
 interface MaintenanceViewProps {
@@ -12,6 +12,11 @@ interface MaintenanceViewProps {
 export default function MaintenanceView({ records, onSaveRecord, onMarkPaid }: MaintenanceViewProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<MaintenanceRecord | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending'>('all');
+  const [serviceTypeFilter, setServiceTypeFilter] = useState<string>('all');
+  const [showOverdueOnly, setShowOverdueOnly] = useState(false);
 
   const handleEdit = (record: MaintenanceRecord) => {
     setEditingRecord(record);
@@ -35,17 +40,46 @@ export default function MaintenanceView({ records, onSaveRecord, onMarkPaid }: M
     return `${day} ${month} ${year}`;
   };
 
-  // Sort by date (newest start date first) or pending first
-  const sortedRecords = [...records].sort((a, b) => {
-    if (a.paymentStatus === 'pending' && b.paymentStatus === 'paid') return -1;
-    if (a.paymentStatus === 'paid' && b.paymentStatus === 'pending') return 1;
-    return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
-  });
+  const filteredAndSortedRecords = useMemo(() => {
+    let result = [...records];
+    
+    // Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(r => 
+        r.clientName.toLowerCase().includes(q) || 
+        r.companyName.toLowerCase().includes(q)
+      );
+    }
+    
+    // Status
+    if (statusFilter !== 'all') {
+      result = result.filter(r => r.paymentStatus === statusFilter);
+    }
+    
+    // Service
+    if (serviceTypeFilter !== 'all') {
+      result = result.filter(r => r.serviceType === serviceTypeFilter);
+    }
+    
+    // Overdue
+    if (showOverdueOnly) {
+      const today = new Date().getTime();
+      result = result.filter(r => r.paymentStatus === 'pending' && new Date(r.endDate).getTime() < today);
+    }
+
+    // Sort by date (newest start date first) or pending first
+    return result.sort((a, b) => {
+      if (a.paymentStatus === 'pending' && b.paymentStatus === 'paid') return -1;
+      if (a.paymentStatus === 'paid' && b.paymentStatus === 'pending') return 1;
+      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+    });
+  }, [records, searchQuery, statusFilter, serviceTypeFilter, showOverdueOnly]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-slate-50 relative p-6">
       <div className="max-w-7xl mx-auto w-full">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Service Maintenance</h1>
             <p className="text-sm text-slate-500 mt-1">Manage recurring maintenance services and tracking</p>
@@ -57,6 +91,56 @@ export default function MaintenanceView({ records, onSaveRecord, onMarkPaid }: M
             <Plus className="w-4 h-4" />
             New Maintenance
           </button>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex flex-wrap gap-4 items-center flex-1">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search clients or companies..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-slate-400" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="all">All Statuses</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+
+            <select
+              value={serviceTypeFilter}
+              onChange={(e) => setServiceTypeFilter(e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white max-w-[200px]"
+            >
+              <option value="all">All Services</option>
+              {Object.entries(MAINTENANCE_SERVICE_LABELS).map(([val, label]) => (
+                <option key={val} value={val}>{label}</option>
+              ))}
+            </select>
+          </div>
+          
+          <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={showOverdueOnly}
+              onChange={(e) => setShowOverdueOnly(e.target.checked)}
+              className="w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500"
+            />
+            <span className="font-medium text-rose-700">Show Overdue</span>
+          </label>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -74,14 +158,14 @@ export default function MaintenanceView({ records, onSaveRecord, onMarkPaid }: M
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {sortedRecords.length === 0 ? (
+                {filteredAndSortedRecords.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                       No maintenance records found. Add one to get started.
                     </td>
                   </tr>
                 ) : (
-                  sortedRecords.map((record) => (
+                  filteredAndSortedRecords.map((record) => (
                     <tr key={record.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="font-semibold text-slate-800">{record.clientName}</div>
@@ -100,7 +184,7 @@ export default function MaintenanceView({ records, onSaveRecord, onMarkPaid }: M
                         ₹{record.amount.toLocaleString('en-IN')}
                       </td>
                       <td className="px-6 py-4 capitalize">
-                        {record.paymentFrequency}
+                        {record.paymentFrequency.replace('-', ' ')}
                       </td>
                       <td className="px-6 py-4">
                         {record.paymentStatus === 'paid' ? (

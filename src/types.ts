@@ -13,7 +13,7 @@ export const MAINTENANCE_SERVICE_LABELS: Record<MaintenanceServiceType, string> 
   social_media_marketing: 'Social Media Marketing',
 };
 
-export type PaymentFrequency = 'monthly' | 'quarterly' | 'yearly';
+export type PaymentFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly';
 
 export interface MaintenanceRecord {
   id: string;

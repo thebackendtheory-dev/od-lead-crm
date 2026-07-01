@@ -129,6 +129,7 @@ export default function MaintenanceFormModal({ isOpen, onClose, onSave, recordTo
               >
                 <option value="monthly">Monthly</option>
                 <option value="quarterly">Quarterly</option>
+                <option value="half-yearly">Half Yearly</option>
                 <option value="yearly">Yearly</option>
               </select>
             </div>
