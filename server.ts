@@ -43,7 +43,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const isValid = await bcrypt.compare(password, user.password_hash);
+    const isValid = await bcrypt.compare(password, (user as any).password_hash);
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -236,7 +236,10 @@ app.post('/api/maintenance', async (req, res) => {
   
   // @ts-ignore
   const { error } = await supabase.from('maintenance_records').insert(dbData);
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    console.error('Supabase insert error:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
   res.json(record);
 });
 
@@ -259,7 +262,10 @@ app.put('/api/maintenance/:id', async (req, res) => {
 
   // @ts-ignore
   const { error } = await supabase.from('maintenance_records').update(dbData).eq('id', req.params.id);
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    console.error('Supabase update error:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
   res.json(record);
 });
 

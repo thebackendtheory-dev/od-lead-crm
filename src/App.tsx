@@ -87,7 +87,6 @@ export default function App() {
     // Read from localStorage synchronously first for fast render
     const savedLeads = getLeadsFromStore();
     setLeads(savedLeads);
-    setMaintenanceRecords(getMaintenanceFromStore());
     
     // Then attempt to fetch from API in background
     fetchLeadsAsync().then((serverLeads) => {
