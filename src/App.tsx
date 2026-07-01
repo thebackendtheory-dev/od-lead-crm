@@ -14,8 +14,6 @@ import {
   generateAlerts, 
   SEED_USERS,
   filterLeadsByRole,
-  getMaintenanceFromStore,
-  saveMaintenanceToStore,
   fetchMaintenanceAsync,
   createMaintenanceAsync,
   updateMaintenanceAsync
@@ -125,33 +123,19 @@ export default function App() {
     }
   };
 
-  const syncMaintenanceStore = async (updatedRecords: MaintenanceRecord[], recordToUpdate?: MaintenanceRecord) => {
-    setMaintenanceRecords(updatedRecords);
-    saveMaintenanceToStore(updatedRecords);
-    
-    // Also push change to API
-    if (recordToUpdate) {
-      if (updatedRecords.some(r => r.id === recordToUpdate.id)) {
-        // It's an update or create
-        const isNew = !maintenanceRecords.some(r => r.id === recordToUpdate.id);
-        if (isNew) {
-          try { await fetch('/api/maintenance', { method: 'POST', body: JSON.stringify(recordToUpdate), headers: { 'Content-Type': 'application/json' }}); } catch (e) {}
-        } else {
-          try { await fetch(`/api/maintenance/${recordToUpdate.id}`, { method: 'PUT', body: JSON.stringify(recordToUpdate), headers: { 'Content-Type': 'application/json' }}); } catch (e) {}
-        }
-      } else {
-        // It's a delete
-        try { await fetch(`/api/maintenance/${recordToUpdate.id}`, { method: 'DELETE' }); } catch (e) {}
-      }
-    }
-  };
-
-  const handleSaveMaintenanceRecord = (record: MaintenanceRecord) => {
+  const handleSaveMaintenanceRecord = async (record: MaintenanceRecord) => {
     const isNew = !maintenanceRecords.some(r => r.id === record.id);
     const updated = isNew
       ? [...maintenanceRecords, record]
       : maintenanceRecords.map(r => r.id === record.id ? record : r);
-    syncMaintenanceStore(updated, record);
+      
+    setMaintenanceRecords(updated);
+    
+    if (isNew) {
+      await createMaintenanceAsync(record);
+    } else {
+      await updateMaintenanceAsync(record);
+    }
   };
 
   const handleMarkPaidMaintenance = async (recordId: string) => {
@@ -186,11 +170,11 @@ export default function App() {
     };
 
     const updated = maintenanceRecords.map(r => r.id === recordId ? updatedCurrent : r).concat(nextRecord);
-    syncMaintenanceStore(updated);
+    setMaintenanceRecords(updated);
     
     // Background API sync
-    try { await fetch(`/api/maintenance/${updatedCurrent.id}`, { method: 'PUT', body: JSON.stringify(updatedCurrent), headers: { 'Content-Type': 'application/json' }}); } catch (e) {}
-    try { await fetch('/api/maintenance', { method: 'POST', body: JSON.stringify(nextRecord), headers: { 'Content-Type': 'application/json' }}); } catch (e) {}
+    await updateMaintenanceAsync(updatedCurrent);
+    await createMaintenanceAsync(nextRecord);
   };
 
   // 3. Filtered Leads List based on access control (RBAC):

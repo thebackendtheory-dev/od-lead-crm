@@ -331,32 +331,19 @@ export function saveLeadsToStore(leads: Lead[]): void {
 
 import { MaintenanceRecord } from '../types';
 
-export function getMaintenanceFromStore(): MaintenanceRecord[] {
-  try {
-    const data = localStorage.getItem('agency_maintenance_data_v1');
-    if (data) {
-      return JSON.parse(data);
-    }
-  } catch (error) {
-    console.error('Failed to parse maintenance from localstorage', error);
-  }
-  return [];
-}
-
 export async function fetchMaintenanceAsync(): Promise<MaintenanceRecord[]> {
   try {
     const res = await fetch('/api/maintenance');
     if (res.ok) {
       const data = await res.json();
-      if (data && Array.isArray(data) && data.length > 0) {
-        saveMaintenanceToStore(data);
+      if (data && Array.isArray(data)) {
         return data;
       }
     }
   } catch (error) {
     console.error('API Error:', error);
   }
-  return getMaintenanceFromStore();
+  return [];
 }
 
 export async function createMaintenanceAsync(record: MaintenanceRecord): Promise<void> {
@@ -380,14 +367,6 @@ export async function updateMaintenanceAsync(record: MaintenanceRecord): Promise
     });
   } catch (err) {
     console.error('API Error:', err);
-  }
-}
-
-export function saveMaintenanceToStore(records: MaintenanceRecord[]): void {
-  try {
-    localStorage.setItem('agency_maintenance_data_v1', JSON.stringify(records));
-  } catch (error) {
-    console.error('Failed to save maintenance to localstorage', error);
   }
 }
 
