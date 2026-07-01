@@ -186,6 +186,92 @@ app.delete('/api/leads/:id', async (req, res) => {
   res.json({ success: true });
 });
 
+// --- Maintenance Records API ---
+
+app.get('/api/maintenance', async (req, res) => {
+  const supabase = getSupabase();
+  if (!supabase) return res.json([]);
+  
+  const { data, error } = await supabase.from('maintenance_records').select('*').order('created_at', { ascending: false });
+  if (error) {
+    console.error('Error fetching maintenance records:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+  
+  // Transform to camelCase
+  const records = data.map((row: any) => ({
+    id: row.id,
+    clientName: row.client_name,
+    companyName: row.company_name,
+    serviceType: row.service_type,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    amount: Number(row.amount),
+    paymentFrequency: row.payment_frequency,
+    paymentStatus: row.payment_status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }));
+  res.json(records);
+});
+
+app.post('/api/maintenance', async (req, res) => {
+  const supabase = getSupabase();
+  if (!supabase) return res.json(req.body);
+  
+  const record = req.body;
+  const dbData = {
+    id: record.id,
+    client_name: record.clientName,
+    company_name: record.companyName,
+    service_type: record.serviceType,
+    start_date: record.startDate,
+    end_date: record.endDate,
+    amount: record.amount,
+    payment_frequency: record.paymentFrequency,
+    payment_status: record.paymentStatus,
+    created_at: record.createdAt || new Date().toISOString(),
+    updated_at: record.updatedAt || new Date().toISOString()
+  };
+  
+  // @ts-ignore
+  const { error } = await supabase.from('maintenance_records').insert(dbData);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(record);
+});
+
+app.put('/api/maintenance/:id', async (req, res) => {
+  const supabase = getSupabase();
+  if (!supabase) return res.json(req.body);
+  
+  const record = req.body;
+  const dbData = {
+    client_name: record.clientName,
+    company_name: record.companyName,
+    service_type: record.serviceType,
+    start_date: record.startDate,
+    end_date: record.endDate,
+    amount: record.amount,
+    payment_frequency: record.paymentFrequency,
+    payment_status: record.paymentStatus,
+    updated_at: new Date().toISOString()
+  };
+
+  // @ts-ignore
+  const { error } = await supabase.from('maintenance_records').update(dbData).eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(record);
+});
+
+app.delete('/api/maintenance/:id', async (req, res) => {
+  const supabase = getSupabase();
+  if (!supabase) return res.json({ success: true });
+  
+  const { error } = await supabase.from('maintenance_records').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ success: true });
+});
+
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import('vite');

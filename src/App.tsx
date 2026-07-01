@@ -15,7 +15,10 @@ import {
   SEED_USERS,
   filterLeadsByRole,
   getMaintenanceFromStore,
-  saveMaintenanceToStore
+  saveMaintenanceToStore,
+  fetchMaintenanceAsync,
+  createMaintenanceAsync,
+  updateMaintenanceAsync
 } from './utils/dataStore';
 
 // Components
@@ -92,6 +95,9 @@ export default function App() {
     fetchLeadsAsync().then((serverLeads) => {
       setLeads(serverLeads);
     });
+    fetchMaintenanceAsync().then((serverRecords) => {
+      setMaintenanceRecords(serverRecords);
+    });
 
     const savedUser = getLoggedInUser();
     setCurrentUser(savedUser);
@@ -124,15 +130,21 @@ export default function App() {
     saveMaintenanceToStore(updatedRecords);
   };
 
-  const handleSaveMaintenanceRecord = (record: MaintenanceRecord) => {
+  const handleSaveMaintenanceRecord = async (record: MaintenanceRecord) => {
     const isNew = !maintenanceRecords.some(r => r.id === record.id);
     const updated = isNew
       ? [...maintenanceRecords, record]
       : maintenanceRecords.map(r => r.id === record.id ? record : r);
     syncMaintenanceStore(updated);
+    
+    if (isNew) {
+      await createMaintenanceAsync(record);
+    } else {
+      await updateMaintenanceAsync(record);
+    }
   };
 
-  const handleMarkPaidMaintenance = (recordId: string) => {
+  const handleMarkPaidMaintenance = async (recordId: string) => {
     const record = maintenanceRecords.find(r => r.id === recordId);
     if (!record) return;
 
@@ -165,6 +177,10 @@ export default function App() {
 
     const updated = maintenanceRecords.map(r => r.id === recordId ? updatedCurrent : r).concat(nextRecord);
     syncMaintenanceStore(updated);
+    
+    // Background API sync
+    await updateMaintenanceAsync(updatedCurrent);
+    await createMaintenanceAsync(nextRecord);
   };
 
   // 3. Filtered Leads List based on access control (RBAC):

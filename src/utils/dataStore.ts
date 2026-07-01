@@ -343,6 +343,42 @@ export function getMaintenanceFromStore(): MaintenanceRecord[] {
   return [];
 }
 
+export async function fetchMaintenanceAsync(): Promise<MaintenanceRecord[]> {
+  try {
+    const res = await fetch('/api/maintenance');
+    if (!res.ok) throw new Error('Failed to fetch maintenance records');
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error('API Error:', error);
+    return []; // Return empty if offline or failing
+  }
+}
+
+export async function createMaintenanceAsync(record: MaintenanceRecord): Promise<void> {
+  try {
+    await fetch('/api/maintenance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record)
+    });
+  } catch (err) {
+    console.error('API Error:', err);
+  }
+}
+
+export async function updateMaintenanceAsync(record: MaintenanceRecord): Promise<void> {
+  try {
+    await fetch(`/api/maintenance/${record.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record)
+    });
+  } catch (err) {
+    console.error('API Error:', err);
+  }
+}
+
 export function saveMaintenanceToStore(records: MaintenanceRecord[]): void {
   try {
     localStorage.setItem('agency_maintenance_data_v1', JSON.stringify(records));
